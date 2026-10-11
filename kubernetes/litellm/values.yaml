@@ -1,0 +1,68 @@
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/berriai/litellm
+  tag: "1.103.0"
+  pullPolicy: IfNotPresent
+
+nameOverride: "litellm"
+fullnameOverride: "litellm"
+
+serviceAccount:
+  create: false
+  name: litellm
+  automount: true
+
+service:
+  type: ClusterIP
+  port: 4000
+
+ingress:
+  enabled: false
+
+# Use a locally created Kubernetes Secret for the gateway API key.
+masterkeySecretName: litellm-masterkey
+masterkeySecretKey: masterkey
+
+# Keep the initial deployment to one replica and avoid Redis.
+redis:
+  enabled: false
+
+# Retain the chart's bundled PostgreSQL for the initial deployment.
+db:
+  deployStandalone: true
+  useExisting: false
+
+proxy_config:
+  model_list:
+    - model_name: nova-2-lite
+      litellm_params:
+        model: bedrock/us.amazon.nova-2-lite-v1:0
+        aws_region_name: us-east-1
+
+  general_settings:
+    master_key: os.environ/PROXY_MASTER_KEY
+
+# Modest initial sizing for the existing t3.large node.
+resources:
+  requests:
+    cpu: 500m
+    memory: 2Gi
+  limits:
+    cpu: "1"
+    memory: 3Gi
+
+autoscaling:
+  enabled: false
+
+postgresql:
+  primary:
+    persistence:
+      storageClass: gp2
+      size: 8Gi
+migrationJob:
+  enabled: true
+  hooks:
+    helm:
+      enabled: true

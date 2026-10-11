@@ -1,0 +1,5 @@
+bucket       = "aigw-terraform-state-739723331869-us-east-1"
+key          = "ai-gateway-demo/terraform.tfstate"
+region       = "us-east-1"
+encrypt      = true
+use_lockfile = true

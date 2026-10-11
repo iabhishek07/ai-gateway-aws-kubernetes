@@ -39,3 +39,9 @@ credentials/
 __pycache__/
 .venv/
 venv/
+
+# Local Terraform backend configuration
+/terraform/backend.hcl
+
+# Local secrets
+/tmp/litellm-secret-values.yaml
