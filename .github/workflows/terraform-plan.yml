@@ -1,0 +1,67 @@
+
+name: Terraform Plan
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-plan
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Validate and Plan Infrastructure
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_cluster_endpoint_public_access_cidrs: ${{ vars.CLUSTER_ENDPOINT_PUBLIC_ACCESS_CIDRS }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: Verify required configuration
+        run: |
+          if [[ -z "$TF_VAR_cluster_endpoint_public_access_cidrs" ]]; then
+            echo "Missing repository variable: CLUSTER_ENDPOINT_PUBLIC_ACCESS_CIDRS"
+            exit 1
+          fi
+
+      - name: Configure AWS credentials through OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: GitHubTerraformPlan
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize remote backend
+        run: terraform init -backend-config=backend.hcl -input=false
+
+      - name: Validate Terraform
+        run: terraform validate -no-color
+
+      - name: Generate Terraform plan
+        run: terraform plan -input=false -no-color -lock-timeout=5m
+
