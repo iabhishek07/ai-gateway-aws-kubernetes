@@ -57,7 +57,14 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: Initialize remote backend
-        run: terraform init -backend-config=backend.hcl -input=false
+        run: |
+          terraform init \
+            -backend-config="bucket=aigw-terraform-state-739723331869-us-east-1" \
+            -backend-config="key=ai-gateway-demo/terraform.tfstate" \
+            -backend-config="region=us-east-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true" \
+            -input=false
 
       - name: Validate Terraform
         run: terraform validate -no-color
